@@ -1,0 +1,12 @@
+server {
+    listen 80;
+    server_name _;
+
+    root   {{ web_root }};
+    index  index.html index.htm;
+
+    # For Letsencyrpt
+    location ~ /.well-known {
+        allow all;
+    }
+}
