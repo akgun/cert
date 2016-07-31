@@ -1,0 +1,233 @@
+#!/usr/bin/env python3
+import os
+import sys
+import argparse
+
+
+nginx_path = '/etc/nginx'
+default_conf_file_candidates = [
+	os.path.join(nginx_path, 'conf.d/default.conf'),
+	os.path.join(nginx_path, 'sites-available/default')]
+www_root_candidates = ['/usr/share/nginx/html', '/var/www/html']
+
+
+confs = {}
+
+def register(conf):
+	confs[conf.name] = conf
+
+
+class Conf:
+	def __init__(self, name, template, file, overwrite=True):
+		self.name = name
+		self.template = template
+		self.file = file
+		self.overwrite = overwrite
+
+	@property
+	def abs_path(self):
+		snippets = os.path.join(nginx_path, 'snippets')
+		snippets_generated = os.path.join(snippets, 'generated')
+		if not os.path.exists(snippets):
+			os.makedirs(snippets)
+		if not os.path.exists(snippets_generated):
+			os.makedirs(snippets_generated)
+		return os.path.join(snippets_generated if self.overwrite else snippets, self.file)
+
+	@property
+	def rel_path(self):
+		if self.overwrite:
+			return os.path.join('snippets', 'generated', self.file)
+		return os.path.join('snippets', self.file)
+
+# Templates
+server_name_template = '''
+server_name %(domain)s;
+'''
+
+core_template = '''
+root   %(www_root)s;
+index  index.html index.htm;
+'''
+
+http_template = '''
+server {
+	listen 80;
+	include %(server_name_conf)s;
+
+	include %(core_conf)s;
+}
+'''
+
+le_template = '''
+server {
+	listen 80;
+	include %(server_name_conf)s;
+
+	root   %(www_root)s;
+	index  index.html index.htm;
+
+	# For Letsencyrpt
+	location ~ /.well-known {
+	    allow all;
+	}
+}
+'''
+
+ssl_params_template = '''
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+	ssl_prefer_server_ciphers on;
+	ssl_ciphers "EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH";
+	ssl_ecdh_curve secp384r1;
+	ssl_session_cache shared:SSL:10m;
+	ssl_session_tickets off;
+	ssl_stapling on;
+	ssl_stapling_verify on;
+	resolver 8.8.8.8 8.8.4.4 valid=300s;
+	resolver_timeout 5s;
+	add_header Strict-Transport-Security "max-age=63072000; includeSubdomains; preload";
+	add_header X-Frame-Options DENY;
+	add_header X-Content-Type-Options nosniff;
+
+	ssl_dhparam /etc/ssl/certs/dhparam.pem;
+'''
+
+https_template = '''
+server {
+	listen 80 default_server;
+	listen [::]:80 default_server;
+	include %(server_name_conf)s;
+
+	return 301 https://$server_name$request_uri;
+}
+
+server {
+	# SSL configuration
+
+	listen 443 ssl default_server;
+	listen [::]:443 ssl default_server;
+	include %(server_name_conf)s;
+
+	include %(ssl_params_conf)s;
+	include %(core_conf)s;
+
+	ssl_certificate /etc/letsencrypt/live/%(domain)s/fullchain.pem;
+	ssl_certificate_key /etc/letsencrypt/live/%(domain)s/privkey.pem;
+}
+'''
+
+register(Conf(name='server_name_conf', template=server_name_template, file='server-name.conf'))
+register(Conf(name='core_conf', template=core_template, file='core.conf', overwrite=False))
+register(Conf(name='http_conf', template=http_template, file='http.conf'))
+register(Conf(name='le_conf', template=le_template, file='letsenc.conf'))
+register(Conf(name='ssl_params_conf', template=ssl_params_template, file='ssl-params.conf'))
+register(Conf(name='https_conf', template=https_template, file='https.conf'))
+
+
+def run(cmd):
+	ret_code = os.system(cmd)
+	if ret_code:
+		print('Error while executing command: %s' % cmd)
+		sys.exit(1)
+
+
+def find_default_conf_file():
+	for conf_file in default_conf_file_candidates:
+		if os.path.isfile(conf_file):
+			return conf_file
+
+
+def find_www_root():
+	for www_root_folder in www_root_candidates:
+		if os.path.isdir(www_root_folder):
+			return www_root_folder
+
+
+def create_files(args):
+	params = vars(args)
+	params.update({ c.name : c.rel_path for c in confs.values()})
+	for conf in confs.values():
+		path = conf.abs_path
+		if os.path.exists(path) and not conf.overwrite:
+			print('Exists: %s' % path)
+			continue
+		print('Writing: %s' % path)
+		with open(path, 'w') as f:
+			f.write(conf.template % params)
+
+
+def reload_nginx():
+	run('nginx -t')
+	run('service nginx reload')
+
+
+def change_conf(default_conf_file, conf):
+	print('changing conf to "%s"' % conf.file)
+	with open(default_conf_file, 'w') as f:
+		f.write('include %s;' % conf.rel_path)
+	reload_nginx()
+
+
+def install_dhparam():
+	if not os.path.isfile('/etc/ssl/certs/dhparam.pem'):
+		print('Installing dhparam...')
+		run('openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048')
+
+
+def install_cert(args):
+	test_param = ' --test-cert' if not args.live else ''
+	cmd = 'certbot certonly --agree-tos --email %(email)s --webroot -w %(www_root)s -d %(domain)s' % \
+				vars(args)
+	run(cmd + test_param)
+
+
+def enable(args):
+	change_conf(args.default_conf_file, confs['le_conf'])
+	install_dhparam()
+	install_cert(args)
+	change_conf(args.default_conf_file, confs['https_conf'])
+
+
+def disable(args):
+	change_conf(args.default_conf_file, confs['http_conf'])
+
+
+def get_args():
+	parser = argparse.ArgumentParser(prog='PROG')
+	subparsers = parser.add_subparsers(dest='cmd', help='Enables or disables ssl.')
+	subparsers.required = True
+
+	common_parser =  argparse.ArgumentParser(add_help=False)
+	common_parser.add_argument('--domain', dest='domain', help='For ex; www.akgundemirbas.com', required=True)
+	default_conf_file = find_default_conf_file()
+	common_parser.add_argument('--default-conf', dest='default_conf_file',
+						help='Nginx default conf file. For ex; /etc/nginx/sites-available/default',
+						default=default_conf_file,
+						required=(False if default_conf_file else True))
+	www_root = find_www_root()
+	common_parser.add_argument('--www-root', dest='www_root',
+						help='Web root folder. For ex; /var/www/html',
+						default=www_root,
+						required=(False if www_root else True))
+
+	enable_parser = subparsers.add_parser('enable', help='Enables ssl.', parents=[common_parser])
+	enable_parser.set_defaults(enable=True)
+	enable_parser.set_defaults(disable=False)
+	enable_parser.add_argument('--email', dest='email', help='Email address', required=True)
+	enable_parser.add_argument('--live', dest='live', help='Creates test cert', action='store_true')
+
+	disable_parser = subparsers.add_parser('disable', help='Disables ssl.', parents=[common_parser])
+	disable_parser.set_defaults(disable=True)
+	disable_parser.set_defaults(enable=False)
+
+	return parser.parse_args()
+
+
+if __name__ == '__main__':
+	run('nginx -v')
+	args = get_args()
+	create_files(args)
+	if args.enable:
+		enable(args)
+	elif args.disable:
+		disable(args)
