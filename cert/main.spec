@@ -7,7 +7,7 @@ a = Analysis(['main.py'],
              pathex=['.'],
              binaries=None,
              datas=[
-                ('cert/templates', 'templates')
+                ('cert/templates', 'cert/templates')
              ],
              hiddenimports=[],
              hookspath=[],

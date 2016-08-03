@@ -57,7 +57,7 @@ def change_conf(default_conf_file, config):
     reload_nginx()
 
 
-def install_dhparam():
+def install_dhparam(context):
     if not os.path.isfile('/etc/ssl/certs/dhparam.pem'):
         print('Installing dhparam...')
         run('openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048')
@@ -65,13 +65,13 @@ def install_dhparam():
 
 def install_cert(context):
     test_param = ' --test-cert' if not context['live'] else ''
-    cmd = 'certbot certonly --agree-tos --email %(email)s --webroot -w %(web_root)s -d %(domain.root)s -d %(domain.www)s' % context
+    cmd = 'certbot certonly --agree-tos --email {email} --webroot -w {web_root} -d {domain[root]} -d {domain[www]}'.format(**context)
     run(cmd + test_param)
 
 
 def install(context):
     change_conf(context['default_conf_file'], configs['le'])
-    install_dhparam()
+    install_dhparam(context)
     install_cert(context)
     change_conf(context['default_conf_file'], configs['https'])
 
