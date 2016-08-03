@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 
 from .cli import get_args
 from .util import reload_nginx, run
@@ -102,6 +103,6 @@ def create_context(args):
 
 def main():
     run('nginx -v')
-    context = create_context(get_args())
+    context = create_context(get_args(sys.argv[1:]))
     create_config_files(context)
     cmds[context['cmd']](context)
