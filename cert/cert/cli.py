@@ -55,7 +55,7 @@ def get_args(args):
     install_parser.set_defaults(cmd='install')
     install_parser.add_argument('--email', dest='email', help='Email address', required=True)
     install_parser.add_argument('--live', dest='live', help='Creates real cert', action='store_true')
-    install_parser.add_argument('--no-dhparam', dest='no_dhparam', help='Disables dhparam generation', action='store_false')
+    install_parser.add_argument('--no-dhparam', dest='no_dhparam', help='Disables dhparam generation', action='store_true')
 
     disable_parser = subparsers.add_parser('disable', help='Disables ssl.', parents=[common_parser])
     disable_parser.set_defaults(cmd='disable')

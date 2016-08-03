@@ -13,8 +13,8 @@ class TestCli(unittest.TestCase):
         self.assertEqual('example.com', args['domain'])
         self.assertEqual('example@example.com', args['email'])
         self.assertFalse(args['live'])
-        self.assertTrue(args['no_dhparam'])
+        self.assertFalse(args['no_dhparam'])
 
     def test_get_args_install_no_dhparam(self):
         args = get_args(self.install_base + ['--no-dhparam'])
-        self.assertFalse(args['no_dhparam'])
+        self.assertTrue(args['no_dhparam'])

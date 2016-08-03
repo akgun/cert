@@ -59,7 +59,7 @@ def change_conf(default_conf_file, config):
 
 
 def install_dhparam(context):
-    if not os.path.isfile('/etc/ssl/certs/dhparam.pem'):
+    if not os.path.isfile('/etc/ssl/certs/dhparam.pem') and context['dhparam']:
         print('Installing dhparam...')
         run('openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048')
 
@@ -93,7 +93,8 @@ def create_context(args):
     context['web_root'] = args.pop('web_root')
     context['cmd'] = args.pop('cmd')
     context['email'] = args.pop('email', None)
-    context['live'] = args.pop('live', False)
+    context['live'] = args.pop('live', None)
+    context['dhparam'] = not args.pop('no_dhparam', None)
     assert not args, 'All arguments are not consumed. Remaining args: %s' % args
 
     context.update({'configs': configs})
