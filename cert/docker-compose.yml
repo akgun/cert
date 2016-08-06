@@ -6,8 +6,12 @@ services:
             context: .
             dockerfile: Dockerfile-ubuntu
         container_name: cert_ubuntu
+        volumes:
+            - .:/app
     debian:
         build:
             context: .
             dockerfile: Dockerfile-debian
         container_name: cert_debian
+        volumes:
+            - .:/app
