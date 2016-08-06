@@ -40,10 +40,10 @@ class Config:
 
 
 register(Config(name='core', template='core.txt', file='core.conf'))
-register(Config(name='http', template='http.txt', file='http.conf'))
-register(Config(name='https', template='https.txt', file='https.conf'))
-register(Config(name='le', template='le.txt', file='le.conf'))
-register(Config(name='ssl_params', template='ssl_params.txt', file='ssl-params.conf'))
+register(Config(name='http', template='http.txt', file='http.conf', overwrite=True))
+register(Config(name='https', template='https.txt', file='https.conf', overwrite=True))
+register(Config(name='le', template='le.txt', file='le.conf', overwrite=True))
+register(Config(name='ssl_params', template='ssl_params.txt', file='ssl-params.conf', overwrite=True))
 
 
 def create_config_files(context):
