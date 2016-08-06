@@ -50,13 +50,13 @@ def get_args(args):
                         help='Web root folder. For ex; /var/www/html',
                         default=web_root,
                         required=False if web_root else True)
+    common_parser.add_argument('--root-domain-only', dest='root_domain_only', help='Do not generate www domain', action='store_true')
 
     install_parser = subparsers.add_parser('install', help='Installs ssl.', parents=[common_parser])
     install_parser.set_defaults(cmd='install')
     install_parser.add_argument('--email', dest='email', help='Email address', required=True)
     install_parser.add_argument('--live', dest='live', help='Creates real cert', action='store_true')
     install_parser.add_argument('--no-dhparam', dest='no_dhparam', help='Disables dhparam generation', action='store_true')
-    install_parser.add_argument('--root-domain-only', dest='root_domain_only', help='Do not generate www domain', action='store_true')
 
     disable_parser = subparsers.add_parser('disable', help='Disables ssl.', parents=[common_parser])
     disable_parser.set_defaults(cmd='disable')
