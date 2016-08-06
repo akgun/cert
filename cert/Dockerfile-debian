@@ -1,9 +1,10 @@
-FROM ubuntu:16.04
+FROM debian:8
 
 RUN set -e \
     && apt-get update \
     && apt-get install -y \
-                        python3 \
+                        build-essential \
+                        python3.4 \
                         python3-pip
 
 COPY . /app
