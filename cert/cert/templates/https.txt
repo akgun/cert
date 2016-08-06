@@ -1,6 +1,7 @@
+{% if domain.www %}
 server {
     listen 80;
-    server_name {{ domain.root }} {{ domain.www }};
+    server_name {{ domain.www }};
 
     return 301 https://{{ domain.root }}$request_uri;
 }
@@ -12,6 +13,15 @@ server {
     include {{ configs.ssl_params.rel_path }};
     ssl_certificate /etc/letsencrypt/live/{{ domain.root }}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/{{ domain.root }}/privkey.pem;
+
+    return 301 https://{{ domain.root }}$request_uri;
+}
+
+{% endif %}
+
+server {
+    listen 80;
+    server_name {{ domain.root }};
 
     return 301 https://{{ domain.root }}$request_uri;
 }

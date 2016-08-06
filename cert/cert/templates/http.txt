@@ -1,9 +1,11 @@
+{% if domain.www %}
 server {
     listen 80;
     server_name {{ domain.www }};
 
     return 301 http://{{ domain.root }}$request_uri;
 }
+{% endif %}
 
 server {
     listen 80;

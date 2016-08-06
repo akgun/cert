@@ -66,7 +66,9 @@ def install_dhparam(context):
 
 def install_cert(context):
     test_param = ' --test-cert' if not context['live'] else ''
-    cmd = 'certbot certonly --agree-tos --email {email} --webroot -w {web_root} -d {domain[root]} -d {domain[www]}'.format(**context)
+    domain_arg = ''.join(['-d ' + d for d in context['domain'].values()])
+    context['domain_arg'] = domain_arg
+    cmd = 'certbot certonly --agree-tos --email {email} --webroot -w {web_root} {domain_arg}'.format(**context)
     run(cmd + test_param)
 
 
@@ -86,8 +88,12 @@ cmds = {'install': install,
 def create_context(args):
     context = {}
 
+    context['root_domain_only'] = args.pop('root_domain_only', False)
     domain = args.pop('domain')
-    context.update({'domain': {'root': domain, 'www': 'www.' + domain }})
+    dom = {'domain': {'root': domain}}
+    if not context['root_domain_only']:
+        dom['domain']['www'] = 'www.' + domain
+    context.update(dom)
     context['nginx_path'] = args.pop('nginx_path')
     context['default_conf_file'] = args.pop('default_conf_file')
     context['web_root'] = args.pop('web_root')
