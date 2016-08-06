@@ -1,0 +1,10 @@
+version: "2"
+
+services:
+    ubuntu:
+        build:
+            context: .
+            dockerfile: Dockerfile-ubuntu
+        container_name: cert_ubuntu
+        volumes:
+            - .:/app
