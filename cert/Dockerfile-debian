@@ -3,7 +3,6 @@ FROM debian:8
 RUN set -e \
     && apt-get update \
     && apt-get install -y \
-                        build-essential \
                         python3.4 \
                         python3-pip
 
