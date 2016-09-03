@@ -1,0 +1,19 @@
+{% import "_macros.txt" as m %}
+
+{% if domain.www %}
+server {
+    {{ m.server(80, domain.www) }}
+
+    {{ m.le(web_root) }}
+
+    return 301 http://{{ domain.root }}$request_uri;
+}
+{% endif %}
+
+server {
+    {{ m.server(80, domain.root) }}
+
+    {{ m.le(web_root) }}
+
+    include {{ configs.core.rel_path }};
+}

@@ -1,0 +1,19 @@
+FROM debian:8
+
+RUN set -e \
+    && apt-get update \
+    && apt-get install -y \
+                        python3.4 \
+                        python3-pip \
+                        nginx
+
+COPY . /app
+WORKDIR /app
+
+RUN pip3 install -r requirements.txt
+
+VOLUME /app
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]

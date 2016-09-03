@@ -1,0 +1,12 @@
+{% macro server(port, server) %}
+    listen {{port}} {% if port == 443 %}ssl{% endif %};
+    server_name {{ server }};
+{% endmacro %}
+
+{% macro le(web_root) %}
+    # For Letsencyrpt
+    location /.well-known {
+        root {{ web_root }};
+        allow all;
+    }
+{% endmacro %}
