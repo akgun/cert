@@ -4,3 +4,4 @@ PyInstaller==3.2
 #Test
 nose2==0.6.5
 cov-core==1.15.0
+pylint==1.6.4
