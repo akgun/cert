@@ -8,11 +8,6 @@ case $cmd in
         rm -rf build/ dist/
         exec pyinstaller --onefile main.spec
     ;;
-    test)
-        exec nosetests \
-                --with-coverage \
-                    --cover-erase --cover-package cert --cover-html --cover-html-dir=build/coverage
-    ;;
 esac
 
 exec "$@"
